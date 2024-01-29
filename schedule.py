@@ -28,14 +28,10 @@ def extract_times_and_timezone(time_string):
     pattern = r"(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})\s*([A-Z]+)"
 
     # 搜索匹配
-    match = re.search(pattern, time_string)
-    if match:
-        start_time = match.group(1)
-        end_time = match.group(2)
-        timezone = match.group(3)
-        return start_time, end_time, timezone
-    else:
-        return False
+    match = re.findall(pattern, time_string)
+    print(match)
+    print('------------------')
+    return match
 
 
 def contains_date(string):
@@ -89,39 +85,37 @@ def create_ics_content(df, callback, *col_name):
 
 def create_ics_english_content(df, ics_content, col_name):
     for index, row in df.iterrows():
-        if pd.notna(row['Title']) and pd.notna(row[col_name]):
-            # Start of an event
-            ics_content.append("BEGIN:VEVENT\n")
+        event_date = row[col_name]
+        if pd.notna(row['Title']) and pd.notna(row[col_name]) and contains_date(event_date):
+            # Extract the event times and timezone
+            event_times = extract_times_and_timezone(row['Time'])
+            for event_time in event_times:
+                ics_content.append("BEGIN:VEVENT\n")
+                if not event_time:
+                    continue
+                start_time = convert_to_shanghai_time(
+                    event_time[0], event_time[2])
+                end_time = convert_to_shanghai_time(
+                    event_time[1], event_time[2])
+                # Convert string to datetime
+                start_date_str = datetime.strptime(
+                    f'{event_date} {start_time}', '%d/%m/%Y %H:%M').strftime('%Y%m%dT%H%M%S')
+                end_date_str = datetime.strptime(
+                    f'{event_date} {end_time}', '%d/%m/%Y %H:%M').strftime('%Y%m%dT%H%M%S')
 
-            # Formatting the date
-            event_date = row[col_name]
-            if not contains_date(event_date):
-                continue
-            event_time = extract_times_and_timezone(row['Time'])
-            if not event_time:
-                continue
-            start_time = convert_to_shanghai_time(
-                event_time[0], event_time[2])
-            end_time = convert_to_shanghai_time(event_time[1], event_time[2])
-            # Convert string to datetime
-            start_date_str = datetime.strptime(
-                f'{event_date} {start_time}', '%d/%m/%Y %H:%M').strftime('%Y%m%dT%H%M%S')
-            end_date_str = datetime.strptime(
-                f'{event_date} {end_time}', '%d/%m/%Y %H:%M').strftime('%Y%m%dT%H%M%S')
+                # Event start and end times
+                ics_content.append(f"DTSTART:{start_date_str}\n")
+                ics_content.append(f"DTEND:{end_date_str}\n")
 
-            # Event start and end times
-            ics_content.append(f"DTSTART:{start_date_str}\n")
-            ics_content.append(f"DTEND:{end_date_str}\n")
+                # Event title
+                ics_content.append(f"SUMMARY:{row['Title']}\n")
 
-            # Event title
-            ics_content.append(f"SUMMARY:{row['Title']}\n")
+                # Event description
+                ics_content.append(
+                    f"DESCRIPTION:Module{row['Module']}; {row['Type']}\n")
 
-            # Event description
-            ics_content.append(
-                f"DESCRIPTION:Module{row['Module']}; {row['Type']}\n")
-
-            # End of an event
-            ics_content.append("END:VEVENT\n")
+                # End of an event
+                ics_content.append("END:VEVENT\n")
 
     return ics_content
 
