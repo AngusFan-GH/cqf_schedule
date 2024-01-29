@@ -85,7 +85,7 @@ def main():
 
     for excel_file in excel_files:
         # get the file name
-        file_name = os.path.basename(excel_file)
+        file_name = os.path.basename(excel_file).split('.')[0]
         df = pd.read_excel(excel_file)
 
         # Create the contents for both .ics files
