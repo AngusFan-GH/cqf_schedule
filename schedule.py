@@ -12,11 +12,14 @@ def find_excel_files(directory):
     # check if the directory exists
     if not os.path.exists(directory):
         return f"{directory} does not exist."
-
     # search for all excel files
     xlsx_files = glob.glob(os.path.join(directory, '*.xlsx'))
     xls_files = glob.glob(os.path.join(directory, '*.xls'))
-
+    # 如果文件名以 ~$ 开头，说明是临时文件，不需要处理
+    xlsx_files = [file for file in xlsx_files if not os.path.basename(
+        file).startswith('~$')]
+    xls_files = [file for file in xls_files if not os.path.basename(
+        file).startswith('~$')]
     # combine the file lists
     all_excel_files = xlsx_files + xls_files
 
@@ -53,7 +56,7 @@ def convert_to_shanghai_time(time_str, original_tz_str):
     target_tz = pytz.timezone('Asia/Shanghai')
 
     # 解析时间字符串
-    time_format = '%H:%M'
+    time_format = '%d/%m/%Y %H:%M'
     original_time = datetime.strptime(time_str, time_format)
 
     # 将时间设置为原始时区
@@ -92,14 +95,16 @@ def create_ics_english_content(df, ics_content, col_name):
                 if not event_time:
                     continue
                 start_time = convert_to_shanghai_time(
-                    event_time[0], event_time[2])
+                    f'{event_date} {event_time[0]}', event_time[2])
                 end_time = convert_to_shanghai_time(
-                    event_time[1], event_time[2])
+                    f'{event_date} {event_time[1]}', event_time[2])
+                print(start_time, end_time)
+                print('----------------')
                 # Convert string to datetime
                 start_date_str = datetime.strptime(
-                    f'{event_date} {start_time}', '%d/%m/%Y %H:%M').strftime('%Y%m%dT%H%M%S')
+                    f'{start_time}', '%d/%m/%Y %H:%M').strftime('%Y%m%dT%H%M%S')
                 end_date_str = datetime.strptime(
-                    f'{event_date} {end_time}', '%d/%m/%Y %H:%M').strftime('%Y%m%dT%H%M%S')
+                    f'{end_time}', '%d/%m/%Y %H:%M').strftime('%Y%m%dT%H%M%S')
 
                 # Event start and end times
                 ics_content.append(f"DTSTART:{start_date_str}\n")
