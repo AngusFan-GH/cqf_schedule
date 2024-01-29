@@ -29,8 +29,6 @@ def extract_times_and_timezone(time_string):
 
     # 搜索匹配
     match = re.findall(pattern, time_string)
-    print(match)
-    print('------------------')
     return match
 
 
