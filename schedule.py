@@ -72,6 +72,57 @@ def create_ics_content(df, column_date):
     return "".join(ics_content)
 
 
+def create_ics_chinese_content(df, column_date):
+    # create the .ics file
+    """
+    Create the content of an .ics file from the dataframe for the specified date column, 
+    with corrected date handling.
+    """
+    ics_content = []
+
+    # Start of the calendar
+    ics_content.append("BEGIN:VCALENDAR\n")
+    ics_content.append("VERSION:2.0\n")
+    ics_content.append("PRODID:-//CQF Schedule Calendar//EN\n")
+
+    for index, row in df.iterrows():
+        if pd.notna(row['Title']) and pd.notna(row[column_date]):
+            # Start of an event
+            ics_content.append("BEGIN:VEVENT\n")
+
+            # Formatting the date
+            event_date = row[column_date]
+            if isinstance(event_date, datetime):
+                start_date_str = event_date.strftime("%Y%m%dT%H%M%S")
+                end_date_str = (event_date + timedelta(hours=2)
+                                ).strftime("%Y%m%dT%H%M%S")
+            else:
+                # Convert string to datetime
+                start_date_str = datetime.strptime(
+                    str(event_date), '%d/%m/%Y').strftime("%Y%m%dT190000")
+                end_date_str = (datetime.strptime(
+                    str(event_date), '%d/%m/%Y') + timedelta(hours=3)).strftime("%Y%m%dT220000")
+
+            # Event start and end times
+            ics_content.append(f"DTSTART:{start_date_str}\n")
+            ics_content.append(f"DTEND:{end_date_str}\n")
+
+            # Event title
+            ics_content.append(f"SUMMARY:{row['Title']}\n")
+
+            # Event description
+            ics_content.append(
+                f"DESCRIPTION:{row['Type']}\n")
+
+            # End of an event
+            ics_content.append("END:VEVENT\n")
+
+    # End of the calendar
+    ics_content.append("END:VCALENDAR\n")
+
+    return "".join(ics_content)
+
+
 def write_ics_file(file_path, ics_content):
     # wirte the .ics file
     with open(file_path, 'w') as f:
@@ -90,7 +141,7 @@ def main():
 
         # Create the contents for both .ics files
         ics_content = create_ics_content(df, 'Date')
-        ics_chinese_date_content = create_ics_content(
+        ics_chinese_date_content = create_ics_chinese_content(
             df, 'Chinese date\n(7-10pm)')
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
