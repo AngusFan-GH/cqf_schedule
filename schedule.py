@@ -1,7 +1,8 @@
 import glob
 import os
 import re
-from datetime import datetime, timedelta
+import uuid
+from datetime import datetime
 
 import pandas as pd
 import pytz
@@ -92,14 +93,13 @@ def create_ics_english_content(df, ics_content, col_name):
             event_times = extract_times_and_timezone(row['Time'])
             for event_time in event_times:
                 ics_content.append("BEGIN:VEVENT\n")
+                ics_content.append("UID:" + str(uuid.uuid4().int) + "\n")
                 if not event_time:
                     continue
                 start_time = convert_to_shanghai_time(
                     f'{event_date} {event_time[0]}', event_time[2])
                 end_time = convert_to_shanghai_time(
                     f'{event_date} {event_time[1]}', event_time[2])
-                print(start_time, end_time)
-                print('----------------')
                 # Convert string to datetime
                 start_date_str = datetime.strptime(
                     f'{start_time}', '%d/%m/%Y %H:%M').strftime('%Y%m%dT%H%M%S')
@@ -128,6 +128,7 @@ def create_ics_chinese_content(df, ics_content, col_name):
         if pd.notna(row['Title']) and pd.notna(row[col_name]):
             # Start of an event
             ics_content.append("BEGIN:VEVENT\n")
+            ics_content.append("UID:" + str(uuid.uuid4().int) + "\n")
 
             # Formatting the date
             event_date = row[col_name]
