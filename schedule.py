@@ -131,6 +131,8 @@ def create_ics_english_content(df, ics_content, col_name):
                 ics_content.append(
                     f"DESCRIPTION:Module{row['Module']}; {row['Type']}\n")
 
+                ics_content.append(f"LOCATION:Live Broadcast - January 2024\n")
+
                 ics_content = set_reminder(ics_content, 60)
 
                 # End of an event
@@ -164,6 +166,8 @@ def create_ics_chinese_content(df, ics_content, col_name):
             # Event description
             ics_content.append(
                 f"DESCRIPTION:Module{row['Module']}; {row['Type']}; {row['Golden Tutor']}\n")
+
+            ics_content.append(f"LOCATION:Golden\n")
 
             ics_content = set_reminder(ics_content, 60)
 
