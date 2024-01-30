@@ -67,6 +67,17 @@ def convert_to_shanghai_time(time_str, original_tz_str):
     return target_time.strftime(time_format)
 
 
+def set_reminder(ics_content, reminder):
+    # 设置提醒
+    ics_content.append(f"BEGIN:VALARM\n")
+    ics_content.append(f"TRIGGER:-PT{reminder}M\n")
+    ics_content.append("ACTION:DISPLAY\n")
+    ics_content.append("DESCRIPTION:Reminder\n")
+    ics_content.append("END:VALARM\n")
+
+    return ics_content
+
+
 def create_ics_content(df, cal_name, callback, *col_name):
     # create the .ics file
     ics_content = []
@@ -116,6 +127,8 @@ def create_ics_english_content(df, ics_content, col_name):
                 ics_content.append(
                     f"DESCRIPTION:Module{row['Module']}; {row['Type']}\n")
 
+                ics_content = set_reminder(ics_content, 60)
+
                 # End of an event
                 ics_content.append("END:VEVENT\n")
 
@@ -146,6 +159,8 @@ def create_ics_chinese_content(df, ics_content, col_name):
             # Event description
             ics_content.append(
                 f"DESCRIPTION:Module{row['Module']}; {row['Type']}; {row['Golden Tutor']}\n")
+
+            ics_content = set_reminder(ics_content, 60)
 
             # End of an event
             ics_content.append("END:VEVENT\n")
