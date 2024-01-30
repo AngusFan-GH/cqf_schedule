@@ -106,10 +106,13 @@ def create_ics_english_content(df, ics_content, col_name):
                 ics_content.append("UID:" + str(uuid.uuid4().int) + "\n")
                 if not event_time:
                     continue
-                start_time = convert_to_shanghai_time(
-                    f'{event_date} {event_time[0]}', event_time[2])
-                end_time = convert_to_shanghai_time(
-                    f'{event_date} {event_time[1]}', event_time[2])
+                timezone = event_time[2]
+                start_time = f'{event_date} {event_time[0]}'
+                end_time = f'{event_date} {event_time[1]}'
+                # start_time = convert_to_shanghai_time(
+                #     f'{event_date} {event_time[0]}', event_time[2])
+                # end_time = convert_to_shanghai_time(
+                #     f'{event_date} {event_time[1]}', event_time[2])
                 # Convert string to datetime
                 start_date_str = datetime.strptime(
                     f'{start_time}', '%d/%m/%Y %H:%M').strftime('%Y%m%dT%H%M%S')
@@ -117,8 +120,9 @@ def create_ics_english_content(df, ics_content, col_name):
                     f'{end_time}', '%d/%m/%Y %H:%M').strftime('%Y%m%dT%H%M%S')
 
                 # Event start and end times
-                ics_content.append(f"DTSTART:{start_date_str}\n")
-                ics_content.append(f"DTEND:{end_date_str}\n")
+                ics_content.append(
+                    f"DTSTART;TZID={timezone}:{start_date_str}\n")
+                ics_content.append(f"DTEND;TZID={timezone}:{end_date_str}\n")
 
                 # Event title
                 ics_content.append(f"SUMMARY:{row['Title']}\n")
