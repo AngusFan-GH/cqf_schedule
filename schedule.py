@@ -154,8 +154,9 @@ def create_ics_chinese_content(df, ics_content, col_name):
             end_date_str = event_date.strftime("%Y%m%dT220000")
 
             # Event start and end times
-            ics_content.append(f"DTSTART:{start_date_str}\n")
-            ics_content.append(f"DTEND:{end_date_str}\n")
+            timezone = 'Asia/Shanghai'
+            ics_content.append(f"DTSTART;TZID={timezone}:{start_date_str}\n")
+            ics_content.append(f"DTEND;TZID={timezone}:{end_date_str}\n")
 
             # Event title
             ics_content.append(f"SUMMARY:{row['Title']}\n")
