@@ -67,7 +67,7 @@ def convert_to_shanghai_time(time_str, original_tz_str):
     return target_time.strftime(time_format)
 
 
-def create_ics_content(df, callback, *col_name):
+def create_ics_content(df, cal_name, callback, *col_name):
     # create the .ics file
     ics_content = []
 
@@ -75,6 +75,7 @@ def create_ics_content(df, callback, *col_name):
     ics_content.append("BEGIN:VCALENDAR\n")
     ics_content.append("VERSION:2.0\n")
     ics_content.append("PRODID:-//CQF Schedule Calendar//EN\n")
+    ics_content.append(f"X-WR-CALNAME:{cal_name}\n")
 
     ics_content = callback(df, ics_content, *col_name)
     # End of the calendar
@@ -191,9 +192,9 @@ def main():
         df_filled = fill_merged_cells(df, 'Date', '%d/%m/%Y')
         # Create the contents for both .ics files
         ics_english_content = create_ics_content(
-            df_filled, create_ics_english_content, 'Date')
+            df_filled, 'CQF English Schedule', create_ics_english_content, 'Date')
         ics_chinese_content = create_ics_content(
-            df_filled, create_ics_chinese_content, 'Chinese date\n(7-10pm)')
+            df_filled, 'CQF Chinese Schedule', create_ics_chinese_content, 'Chinese date\n(7-10pm)')
 
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
