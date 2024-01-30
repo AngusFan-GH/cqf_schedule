@@ -37,13 +37,11 @@ def extract_times_and_timezone(time_string):
 
 
 def contains_date(string):
-    # 定义正则表达式模式来匹配 dd/mm/yyyy 格式的日期
-    pattern = r'\b\d{2}/\d{2}/\d{4}\b'
-
-    # 搜索匹配
-    if re.search(pattern, string):
+    string = str(string)
+    try:
+        datetime.strptime(string, '%d/%m/%Y')
         return True
-    else:
+    except ValueError:
         return False
 
 
@@ -125,6 +123,7 @@ def create_ics_english_content(df, ics_content, col_name):
 
 def create_ics_chinese_content(df, ics_content, col_name):
     for index, row in df.iterrows():
+        event_date = row[col_name]
         if pd.notna(row['Title']) and pd.notna(row[col_name]):
             # Start of an event
             ics_content.append("BEGIN:VEVENT\n")
@@ -153,10 +152,24 @@ def create_ics_chinese_content(df, ics_content, col_name):
     return ics_content
 
 
-def fill_merged_cells(df):
-    # 使用前向填充 (ffill) 来填充 NaN 值
-    # axis=0 表示沿着列的方向填充（即填充同一列中的 NaN）
-    return df.fillna(method='ffill', axis=0)
+def fill_merged_cells(df, date_column, date_format=None):
+    # 转换日期列，并指定日期格式
+    df_filtered = df[pd.to_datetime(
+        df[date_column], format=date_format, errors='coerce').notna()]
+
+    # 创建一个副本以避免 SettingWithCopyWarning
+    df_filtered = df_filtered.copy()
+
+    for col in df_filtered.columns:
+        # 标记非 NaN 值后面直接跟随的 NaN
+        mask = df_filtered[col].notna() & df_filtered[col].shift().isna()
+        cumulative_mask = mask.cumsum()
+
+        # 使用 .loc[] 安全地修改数据
+        df_filtered.loc[:, col] = df_filtered[col].ffill().where(
+            cumulative_mask.eq(cumulative_mask.shift()), df_filtered[col])
+
+    return df_filtered
 
 
 def write_ics_file(file_path, ics_content):
@@ -174,8 +187,8 @@ def main():
         # get the file name
         file_name = os.path.basename(excel_file).split('.')[0]
         df = pd.read_excel(excel_file)
-        df_filled = fill_merged_cells(df)
-
+        # 填充合并单元格
+        df_filled = fill_merged_cells(df, 'Date', '%d/%m/%Y')
         # Create the contents for both .ics files
         ics_english_content = create_ics_content(
             df_filled, create_ics_english_content, 'Date')
