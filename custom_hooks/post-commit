@@ -3,7 +3,7 @@
 # 获取当前分支名称
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 
-# 检查当前分支是否是main
+# 检查当前分支是否是 main 分支
 if [ "$current_branch" = "main" ]; then
     # 推送到 Gitee 的 master 分支
     git push gitee master
