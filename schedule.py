@@ -207,10 +207,11 @@ def main():
     directory_path = 'source'
     excel_files = find_excel_files(directory_path)
     output_directory = 'ics'
+    output_filename = 'CQF_January_2024_Schedule'
 
     for excel_file in excel_files:
         # get the file name
-        file_name = os.path.basename(excel_file).split('.')[0]
+        # file_name = os.path.basename(excel_file).split('.')[0]
         df = pd.read_excel(excel_file)
         # 填充合并单元格
         df_filled = fill_merged_cells(df, 'Date', '%d/%m/%Y')
@@ -224,8 +225,8 @@ def main():
             os.makedirs(output_directory)
 
         # Save the contents to files
-        ics_file_path = f'{output_directory}/{file_name}_english.ics'
-        ics_chinese_date_file_path = f'{output_directory}/{file_name}_chinese.ics'
+        ics_file_path = f'{output_directory}/{output_filename}_english.ics'
+        ics_chinese_date_file_path = f'{output_directory}/{output_filename}_chinese.ics'
         write_ics_file(ics_file_path, ics_english_content)
         write_ics_file(ics_chinese_date_file_path, ics_chinese_content)
 
