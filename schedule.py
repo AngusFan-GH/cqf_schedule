@@ -94,6 +94,8 @@ def create_ics_english_content(df, ics_content, col_name):
                     f'{end_time}', '%d/%m/%Y %H:%M').strftime('%Y%m%dT%H%M%S')
 
                 # Event start and end times
+                if timezone == 'BST':
+                    timezone = 'Europe/London'
                 ics_content.append(
                     f"DTSTART;TZID={timezone}:{start_date_str}\n")
                 ics_content.append(f"DTEND;TZID={timezone}:{end_date_str}\n")
