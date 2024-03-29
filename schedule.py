@@ -1,3 +1,4 @@
+import argparse
 import glob
 import os
 import re
@@ -45,28 +46,6 @@ def contains_date(string):
         return False
 
 
-def convert_to_shanghai_time(time_str, original_tz_str):
-    # 时区转换
-    # 夏令时的时区缩写为 BST，但是 pytz 模块不支持 BST 时区
-    if original_tz_str == 'BST':
-        original_tz_str = 'Europe/London'
-    # 定义原始时区和目标时区
-    original_tz = pytz.timezone(original_tz_str)
-    target_tz = pytz.timezone('Asia/Shanghai')
-
-    # 解析时间字符串
-    time_format = '%d/%m/%Y %H:%M'
-    original_time = datetime.strptime(time_str, time_format)
-
-    # 将时间设置为原始时区
-    original_time = original_tz.localize(original_time)
-
-    # 转换到目标时区
-    target_time = original_time.astimezone(target_tz)
-
-    return target_time.strftime(time_format)
-
-
 def set_reminder(ics_content, reminder):
     # 设置提醒
     ics_content.append(f"BEGIN:VALARM\n")
@@ -109,11 +88,6 @@ def create_ics_english_content(df, ics_content, col_name):
                 timezone = event_time[2]
                 start_time = f'{event_date} {event_time[0]}'
                 end_time = f'{event_date} {event_time[1]}'
-                # start_time = convert_to_shanghai_time(
-                #     f'{event_date} {event_time[0]}', event_time[2])
-                # end_time = convert_to_shanghai_time(
-                #     f'{event_date} {event_time[1]}', event_time[2])
-                # Convert string to datetime
                 start_date_str = datetime.strptime(
                     f'{start_time}', '%d/%m/%Y %H:%M').strftime('%Y%m%dT%H%M%S')
                 end_date_str = datetime.strptime(
@@ -125,11 +99,13 @@ def create_ics_english_content(df, ics_content, col_name):
                 ics_content.append(f"DTEND;TZID={timezone}:{end_date_str}\n")
 
                 # Event title
-                ics_content.append(f"SUMMARY:{row['Title']}\n")
+                ics_content.append(f"SUMMARY:{row['Type']} - {row['Title']}\n")
 
                 # Event description
+                module = int(row['Module']) if pd.notna(
+                    row['Module']) else 'N/A'
                 ics_content.append(
-                    f"DESCRIPTION:Module{row['Module']}; {row['Type']}\n")
+                    f"DESCRIPTION:Module{module}; {row['Type']}\n")
 
                 ics_content.append(f"LOCATION:Live Broadcast - January 2024\n")
 
@@ -161,11 +137,13 @@ def create_ics_chinese_content(df, ics_content, col_name):
             ics_content.append(f"DTEND;TZID={timezone}:{end_date_str}\n")
 
             # Event title
-            ics_content.append(f"SUMMARY:{row['Title']}\n")
+            ics_content.append(f"SUMMARY:{row['Type']} - {row['Title']}\n")
 
             # Event description
+            module = int(row['Module']) if pd.notna(
+                row['Module']) else 'N/A'
             ics_content.append(
-                f"DESCRIPTION:Module{row['Module']}; {row['Type']}; {row['Golden Tutor']}\n")
+                f"DESCRIPTION:Module{module}; {row['Type']}; {row['Golden Tutor']}\n")
 
             ics_content.append(f"LOCATION:Golden\n")
 
@@ -204,6 +182,14 @@ def write_ics_file(file_path, ics_content):
 
 
 def main():
+
+    # 设置命令行参数
+    parser = argparse.ArgumentParser(
+        description="Generate .ics calendar files from Excel schedules.")
+    parser.add_argument("-l", "--language", choices=["english", "chinese", "both"], default="both",
+                        help="Specify the language of the calendar to generate (english, chinese, or both). Default is both.")
+    args = parser.parse_args()
+
     directory_path = 'source'
     excel_files = find_excel_files(directory_path)
     output_directory = 'ics'
@@ -215,20 +201,22 @@ def main():
         df = pd.read_excel(excel_file)
         # 填充合并单元格
         df_filled = fill_merged_cells(df, 'Date', '%d/%m/%Y')
-        # Create the contents for both .ics files
-        ics_english_content = create_ics_content(
-            df_filled, 'CQF English Schedule', create_ics_english_content, 'Date')
-        ics_chinese_content = create_ics_content(
-            df_filled, 'CQF Chinese Schedule', create_ics_chinese_content, 'Chinese date\n(7-10pm)')
 
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
 
-        # Save the contents to files
-        ics_file_path = f'{output_directory}/{output_filename}_english.ics'
-        ics_chinese_date_file_path = f'{output_directory}/{output_filename}_chinese.ics'
-        write_ics_file(ics_file_path, ics_english_content)
-        write_ics_file(ics_chinese_date_file_path, ics_chinese_content)
+        # 根据命令行参数生成指定语言的课表
+        if args.language in ["english", "both"]:
+            ics_english_content = create_ics_content(
+                df_filled, 'CQF English Schedule', create_ics_english_content, 'Date')
+            ics_file_path = f'{output_directory}/{output_filename}_english.ics'
+            write_ics_file(ics_file_path, ics_english_content)
+
+        if args.language in ["chinese", "both"]:
+            ics_chinese_content = create_ics_content(
+                df_filled, 'CQF Chinese Schedule', create_ics_chinese_content, 'Chinese date\n(7-10pm)')
+            ics_chinese_date_file_path = f'{output_directory}/{output_filename}_chinese.ics'
+            write_ics_file(ics_chinese_date_file_path, ics_chinese_content)
 
 
 if __name__ == "__main__":
